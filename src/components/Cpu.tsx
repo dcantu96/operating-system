@@ -23,7 +23,7 @@ export const Cpu = ({ context, handleAlgorithm, handleQuantum, handleQuantumActi
   }
 
   return (
-    <div className='grid grid-cols-6 py-4 px-6 bg-green-400 shadow rounded'>
+    <div className='grid grid-cols-6 py-4 px-6 bg-yellow-400 shadow rounded'>
       <div className='font-bold uppercase'>Cpu</div>
       <div className='col-span-5 grid gap-20 grid-cols-3'>
         <div className='shadow bg-white rounded border border-black col-span-2'>

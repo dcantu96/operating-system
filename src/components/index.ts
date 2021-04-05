@@ -1,9 +1,4 @@
-import { TopActions } from './TopActions'
-import { Process } from './Process'
-import { Cpu } from './Cpu'
-
-export {
-  TopActions,
-  Process,
-  Cpu
-}
+export { TopActions } from './TopActions'
+export { Process } from './Process'
+export { Cpu } from './Cpu'
+export { Pagination } from './Pagination'

@@ -1,16 +1,37 @@
-import React from 'react'
-import { MyMachineContext } from './index.types'
+import React, { useState } from 'react'
+import { EditPages } from './EditPages'
+import { MyMachineContext, ProcessStatusTypes, Process as IProcess, Page } from './index.types'
+import { ProcessMultiForm } from './ProcessMultiForm'
 import { ProcessCard } from './UI'
 
 interface ProcessProps {
   context: MyMachineContext
-  handleName: (event: React.ChangeEvent<HTMLInputElement>) => void
-  handleEstimatedExecutionTime: (event: React.ChangeEvent<HTMLInputElement>) => void
-  handleProcessStatus: (event: React.ChangeEvent<HTMLSelectElement>) => void
-  newProcess: (event: React.FormEvent<HTMLFormElement>) => void
+  send: (event: any, payload?: any) => any
 }
 
-export const Process = ({ context, newProcess, handleEstimatedExecutionTime, handleName, handleProcessStatus }: ProcessProps) => {
+export const Process = ({ context, send }: ProcessProps) => {
+  const defaultNewPage: Page = {
+		number: 0,
+		accessAmount: 0,
+		arrivalTime: 0,
+		lastAccessTime: 0,
+		residence: false,
+		nur: {
+			residence: false,
+			modification: false
+		}
+	}
+  const defaultNewProcess: IProcess = {
+    name: '',
+    status: 'READY',
+    assignedCpuTime: 1,
+    estimatedExecutionTime: 1,
+    pages: [defaultNewPage],
+    arrivalTime: context.currentTime
+  }
+  const [newProcess, setNewProcess] = useState<IProcess>(defaultNewProcess)
+  const [multiForm, toggleMultiForm] = useState(false)
+  const [editPages, toggleEditPages] = useState(false)
   return (
     <div className='grid grid-cols-6 py-4 px-6 bg-gray-300 shadow rounded'>
       <div className='font-bold uppercase'>Procesos</div>
@@ -18,23 +39,39 @@ export const Process = ({ context, newProcess, handleEstimatedExecutionTime, han
         <div className='shadow bg-white rounded border border-black'>
           <div className='text-center pt-2 px-2 pb-1 bg-gray-700 text-white uppercase border-b border-black mb-4'>
             New
+            <button className='bg-white text-black shadow rounded px-3 py-1 ml-4' onClick={() => toggleMultiForm(!multiForm)}>Multi</button>
           </div>
-          <form onSubmit={newProcess} >
+          {multiForm && <ProcessMultiForm context={context} send={send} handleClose={() => toggleMultiForm(!multiForm)} />}
+          {editPages && <EditPages newProcess={newProcess} setNewProcess={setNewProcess} handleClose={() => toggleEditPages(!editPages)} />}
+          <form onSubmit={(e) => { e.preventDefault(); send('NEW_PROCESS_LIST', {
+            processList: [{...newProcess, arrivalTime: context.currentTime}]
+          })}}>
             <div className='flex items-center px-2 py-1 justify-between'>
               <label className='font-bold'>Nombre</label>
-              <input type="text" required className='rounded w-20 py-1' value={context.name} onChange={handleName} />
+              <input type="text" required className='rounded w-20 py-1' value={newProcess.name} onChange={e => setNewProcess({...newProcess, name: e.currentTarget.value})} />
             </div>
             <div className='flex items-center px-2 py-1 justify-between'>
               <label className='font-bold'>Tiempo Est. Ejecución</label>
-              <input type="number" required className='rounded w-20 py-1' value={context.estimatedExecutionTime} onChange={handleEstimatedExecutionTime} />
+              <input type="number" required className='rounded w-20 py-1' value={newProcess.estimatedExecutionTime} onChange={e => setNewProcess({...newProcess, estimatedExecutionTime: e.currentTarget.valueAsNumber})}  />
             </div>
+            { context.isPaginated && 
+              <div className='flex items-center px-2 py-1 justify-between'>
+                <label className='font-bold'>Cant. de Paginas</label>
+                <div className='flex items-center'>
+                  <button className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2 disabled:opacity-50' disabled={newProcess.pages.length <= 1} onClick={() => setNewProcess({...newProcess, pages: newProcess.pages.slice(0, -1)})}>-</button>
+                  <span>{newProcess.pages.length}</span>
+                  <button className='bg-indigo-900 text-white shadow rounded px-3 py-1 ml-2' onClick={() => setNewProcess({...newProcess, pages: [...newProcess.pages, {...defaultNewPage, number: newProcess.pages.length}]})}>+</button>
+                  <button className='bg-yellow-600 text-white shadow rounded px-3 py-1 ml-2' onClick={() => toggleEditPages(!editPages)}>ED</button>
+                </div>
+              </div>
+            }
             <div className='flex items-center px-2 py-1 justify-between'>
               <label className='font-bold'>Estado de Proceso</label>
-              <select className='py-1 px-3 rounded shadow w-56' value={context.processStatus} onChange={handleProcessStatus}>
-                <option value="BLOCKED">Blocked</option>
-                <option value="RUNNING">Running</option>
-                <option value="READY">Ready</option>
-                <option value="FINISHED">Finished</option>
+              <select className='py-1 px-3 rounded shadow w-56' value={newProcess.status} onChange={e => setNewProcess({...newProcess, status: e.currentTarget.value as ProcessStatusTypes})}>
+                <option value={'BLOCKED' as ProcessStatusTypes}>Blocked</option>
+                <option value={'RUNNING' as ProcessStatusTypes}>Running</option>
+                <option value={'READY' as ProcessStatusTypes}>Ready</option>
+                <option value={'FINISHED' as ProcessStatusTypes}>Finished</option>
               </select>
             </div>
             <div className='px-2 pt-1 pb-3 block'>
