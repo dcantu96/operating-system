@@ -17,41 +17,32 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
       quantum: 0,
       algorithm: 'FIFO',
       runType: 'step',
-      estimatedExecutionTime: 0,
-      name: '',
-      processStatus: 'READY',
-      blockedProcessCounter: 5
+      blockedProcessCounter: 5,
+      newProcessList: [],
+      isPaginated: false,
+      pageAlgorithm: 'FIFO',
+      marcos: 5
     },
     states: {
       step: {
         on: {
-          NEW_PROCESS: {
-            actions: ['setNewProcess','reorder'],
+          NEW_PROCESS_LIST: {
+            actions: ['setNewProcessList','reorder'],
           },
+          UPDATE_CURRENT_TIME: { actions: 'setCurrentTime' },
+          UPDATE_MARCOS: { actions: 'setMarcos' },
+          TOGGLE_PAGINATION: { actions: 'togglePagination' },
           ADVANCE: {
             actions: ['updateTime','checkFinished','checkBlocked','checkQuantum','reorder','advance'],
           },
-          CHANGE_NAME: {
-            actions: 'setName',
-          },
-          CHANGE_EST_TIME: {
-            actions: 'setEstimatedExecutionTime',
-          },
-          CHANGE_QUANTUM_ACTIVE: {
-            actions: 'setQuantumActive',
-          },
-          CHANGE_PROCESS_STATUS: {
-            actions: 'setProcessStatus',
-          },
+          CHANGE_QUANTUM_ACTIVE: { actions: 'setQuantumActive' },
           CHANGE_ALGORITHM: {
             actions: ['checkAlgorithm','reorder'],
           },
-          CHANGE_QUANTUM_SIZE: {
-            actions: 'setQuantumSize',
-          },
-          REAL_TIME: {
-            target: 'realTime'
-          },
+          CHANGE_QUANTUM_SIZE: { actions: 'setQuantumSize' },
+          CHANGE_PAGE_ALGORITHM: { actions: 'setPageAlgorithm' },
+          RESET_NUR_BITS: { actions: 'resetNURBits' },
+          REAL_TIME: { target: 'realTime' },
         },
       },
       realTime: {
@@ -80,77 +71,66 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
   },
   {
     actions: {
-      setNewProcess: choose([
-        {
-          actions: 'setNewReadyProcess',
-          cond: (ctx, event) => ctx.processStatus === 'READY'
-        },
-        {
-          actions: 'setNewBlockedProcess',
-          cond: (ctx, event) => ctx.processStatus === 'BLOCKED'
-        },
-        {
-          actions: 'setNewRunningProcess',
-          cond: (ctx, event) => ctx.processStatus === 'RUNNING'
-        },
-        {
-          actions: 'setNewFinishedProcess',
-          cond: (ctx, event) => ctx.processStatus === 'FINISHED'
-        },
-      ]),
+      setNewProcessList: assign((context, event) => {
+        if (event.type !== 'NEW_PROCESS_LIST') 
+          throw new Error("Not supposed to happen. Event type is: " + event)
+        let newReadyStack = context.readyStack
+        let newBlockedStack = context.blockedStack
+        let newFinishedStack = context.finishedStack
+        let newRunningProcess = context.runningProcess
+        event.processList.forEach(newProcess => {
+          if (newProcess.status === 'BLOCKED')
+            newBlockedStack = !!newBlockedStack ?
+              [...newBlockedStack, newProcess] :
+              [newProcess]
+          else if (newProcess.status === 'FINISHED')
+            newFinishedStack = !!newFinishedStack ?
+              [...newFinishedStack, newProcess] :
+              [newProcess]
+          else if (newProcess.status === 'READY')
+            newReadyStack = !!newReadyStack ?
+              [...newReadyStack, newProcess] :
+              [newProcess]
+          else
+            newRunningProcess = newProcess
+        })
+        return {
+          readyStack: newReadyStack,
+          blockedStack: newBlockedStack,
+          finishedStack: newFinishedStack,
+          runningProcess: newRunningProcess
+        }
+      }),
+      setCurrentTime: assign({
+        currentTime: (_, evt) => {
+          if (evt.type !== 'UPDATE_CURRENT_TIME') throw new Error("Error no current time event")
+          return evt.currentTime 
+        }
+      }),
+      setMarcos: assign({
+        marcos: (_, evt) => {
+          if (evt.type !== 'UPDATE_MARCOS') throw new Error("Error no marco event")
+          return evt.marcos
+        }
+      }),
+      togglePagination: assign({
+        isPaginated: (ctx, __) => !ctx.isPaginated
+      }),
+      reorder: assign({
+        readyStack: (ctx, _) => orderByAlgorithm(ctx)
+      }),
       checkAlgorithm: choose([
         {
           actions: ['setAlgorithm','setQuantumForMLFQ'],
-          cond: (ctx, evt) => evt.algorithm === 'MLFQ'
+          cond: (_, evt) => evt.algorithm === 'MLFQ'
         },
         {
           actions: 'setAlgorithm',
         }
       ]),
-      setNewReadyProcess: assign({
-        readyStack: (ctx, evt) => {
-          if (!!ctx.readyStack && !!evt.process) {
-            let newStack = ctx.readyStack
-            newStack.push(evt.process)
-            return newStack
-          } else if (!!evt.process)
-            return [evt.process]
-        },
-      }),
-      reorder: assign({
-        readyStack: (ctx, evt) => {
-          if (!!ctx.readyStack)
-            return orderByAlgorithm(ctx.algorithm, ctx.readyStack, ctx.currentTime)
-        }
-      }),
       setQuantumForMLFQ: assign({
-        quantumSize: (ctx, _) => 10,
-        quantum: (ctx, _) => 10,
-      }),
-      setNewBlockedProcess: assign({
-        blockedStack: (ctx, evt) => {
-          if (!!ctx.blockedStack && !!evt.process) {
-            let newStack = ctx.blockedStack
-            newStack.push(evt.process)
-            return newStack
-          } else if (!!evt.process)
-            return [evt.process]
-        },
-      }),
-      setNewRunningProcess: assign({
-        runningProcess: (ctx, evt: MyMachineEvent) => {
-          if (!!evt.process) { return evt.process }
-        },
-      }),
-      setNewFinishedProcess: assign({
-        finishedStack: (ctx, evt: MyMachineEvent) => {
-          if (!!ctx.finishedStack && !!evt.process) {
-            let newStack = ctx.finishedStack
-            newStack.push(evt.process)
-            return newStack
-          } else if (!!evt.process)
-            return [evt.process]
-        },
+        quantumSize: (_, __) => 10,
+        quantum: (_, __) => 10,
       }),
       checkBlocked: choose([
         {
@@ -197,10 +177,10 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
         blockedProcessCounter: (ctx, _) => ctx.blockedProcessCounter -= 1,
       }),
       resetBlocked: assign({
-        blockedProcessCounter: (ctx, _) => 5,
+        blockedProcessCounter: (_, __) => 5,
       }),
       updateBlockedStack: assign({
-        readyStack: (ctx, evt) => {
+        readyStack: (ctx, _) => {
           const { readyStack, blockedStack } = ctx
           if (!!readyStack && !!blockedStack) {
             let firstBlockedProcess = blockedStack[0]
@@ -225,13 +205,13 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
         },
       }),
       tickQuantum: assign({
-        quantum: (ctx, evt) => ctx.quantum -= 1,
+        quantum: (ctx, _) => ctx.quantum -= 1,
       }),
       updateTime: assign({
-        currentTime: (ctx, evt) => ctx.currentTime += 1,
+        currentTime: (ctx, _) => ctx.currentTime += 1,
       }),
       resetBlockedCounter: assign({
-        blockedProcessCounter: (ctx, _) => 5,
+        blockedProcessCounter: (_, __) => 5,
       }),
       transitionToFinished: assign({
         finishedStack: (ctx, _) => {
@@ -245,10 +225,10 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
         }
       }),
       clearRunning: assign({
-        runningProcess: (ctx, _) => undefined,
+        runningProcess: (_, __) => undefined,
       }),
       sendToReadyQueue: assign({
-        readyStack: (ctx, evt) => {
+        readyStack: (ctx, _) => {
           if (!!ctx.readyStack && !!ctx.runningProcess) {
             let newStack = ctx.readyStack
             newStack.push(ctx.runningProcess)
@@ -258,40 +238,31 @@ const myMachine = Machine<MyMachineContext, MyMachineStateSchema, MyMachineEvent
         }
       }),
       resetQuantum: assign({
-        quantum: (ctx, evt) => ctx.quantumSize,
+        quantum: (ctx, _) => ctx.quantumSize,
       }),
       fetchNewRunningProcess: assign({
-        runningProcess: (ctx, evt) => {
+        runningProcess: (ctx, _) => {
           const { readyStack } = ctx
           if (!!readyStack) return readyStack.shift()
         },
       }),
-      setName: assign({
-        name: (ctx, evt) => evt.name,
-      }),
-      setEstimatedExecutionTime: assign({
-        estimatedExecutionTime: (ctx, evt) => evt.estimatedExecutionTime,
-      }),
-      setProcessStatus: assign({
-        processStatus: (ctx, evt) => evt.status,
-      }),
       setAlgorithm: assign({
-        algorithm: (ctx, evt) => evt.algorithm,
+        algorithm: (_, evt) => evt.algorithm,
       }),
       setQuantumSize: assign({
-        quantumSize: (ctx, evt) => evt.quantumSize,
-        quantum: (ctx, evt) => evt.quantumSize,
+        quantumSize: (_, evt) => evt.quantumSize,
+        quantum: (_, evt) => evt.quantumSize,
       }),
       setQuantumActive: assign({
-        quantumActive: (ctx, evt) => evt.quantumActive
+        quantumActive: (_, evt) => evt.quantumActive
       }),
     },
     guards: {
-      isblockedCounterExpired: (ctx, evt) => ctx.blockedProcessCounter === 0,
-      isblockedStackPopulated: (ctx, evt) => !!ctx.blockedStack && ctx.blockedStack.length > 0,
-      isAlgoritmForQuantum: (ctx, evt) => ctx.algorithm === 'ROUND_ROBIN' || ctx.algorithm === 'MLFQ' || 
+      isblockedCounterExpired: (ctx, _) => ctx.blockedProcessCounter === 0,
+      isblockedStackPopulated: (ctx, _) => !!ctx.blockedStack && ctx.blockedStack.length > 0,
+      isAlgoritmForQuantum: (ctx, _) => ctx.algorithm === 'ROUND_ROBIN' || ctx.algorithm === 'MLFQ' || 
         (ctx.algorithm === 'HRRN' && ctx.quantumActive) || (ctx.algorithm === 'SJF' && ctx.quantumActive),
-      isQuantumExpired: (ctx, event) => isAlgoForQtm(ctx.algorithm) && ctx.quantum === 1,
+      isQuantumExpired: (ctx, _) => isAlgoForQtm(ctx.algorithm) && ctx.quantum === 1,
     },
   },
 )
@@ -301,21 +272,20 @@ const isAlgoForQtm = (algorithm: AlgorithmTypes) => {
          algorithm === 'SJF' || algorithm === 'HRRN'
 }
 
-const orderByAlgorithm = (algorithm: AlgorithmTypes, readyStack: Stack, currentTime: number) => {
-  if (!!readyStack) {
-    switch (algorithm) {
-      case 'FIFO':
-        return orderByFifo(readyStack)
-      case 'SRT':
-        return orderBySrt(readyStack)
-      case 'HRRN':
-        return orderByHrrn(readyStack, currentTime)
-      case 'SJF':
-        return orderBySjf(readyStack)
-      case 'ROUND_ROBIN':
-        return orderByFifo(readyStack)
-    }
-  } else return readyStack
+const orderByAlgorithm = (ctx: MyMachineContext) => {
+  if (!ctx.readyStack) return
+  switch (ctx.algorithm) {
+    case 'FIFO':
+      return orderByFifo(ctx.readyStack)
+    case 'SRT':
+      return orderBySrt(ctx.readyStack)
+    case 'HRRN':
+      return orderByHrrn(ctx.readyStack, ctx.currentTime)
+    case 'SJF':
+      return orderBySjf(ctx.readyStack)
+    case 'ROUND_ROBIN':
+      return orderByFifo(ctx.readyStack)
+  }
 }
 
 const orderByFifo = (readyStack: Stack) => {
@@ -354,10 +324,11 @@ function useMyMachine() {
     quantum: 0,
     algorithm: 'FIFO',
     runType: 'step',
-    estimatedExecutionTime: 0,
-    name: '',
-    processStatus: 'READY',
-    blockedProcessCounter: 5
+    blockedProcessCounter: 5,
+    newProcessList: [],
+    isPaginated: false,
+    pageAlgorithm: 'FIFO',
+    marcos: 5
   }
   return useMachine(myMachine.withContext(defaultContext))
 }

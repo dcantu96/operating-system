@@ -1,9 +1,24 @@
-interface Process {
+interface NUR {
+  residence: boolean
+  modification: boolean
+}
+
+export interface Page {
+  number: number
+  residence: boolean
+  arrivalTime: number
+  lastAccessTime: number
+  accessAmount: number
+  nur: NUR
+}
+
+export interface Process {
   name: string
   estimatedExecutionTime: number
   arrivalTime: number
   assignedCpuTime: number
-  level: number
+  status: ProcessStatusTypes
+  pages: Page[]
 }
 
 type Stack =
@@ -23,11 +38,18 @@ type AlgorithmTypes =
   | 'FIFO'
   | 'SJF'
 
+type PageAlgorithmTypes =
+  | 'FIFO'
+  | 'LRU'
+  | 'LFU'
+  | 'NUR'
+
 type RunTypes =
   | 'real_time'
   | 'step'
 
 interface MyMachineContext {
+  newProcessList: Process[]
   quantumSize: number
   quantumActive: boolean
   runningProcess: Process | undefined
@@ -38,10 +60,10 @@ interface MyMachineContext {
   quantum: number
   algorithm: AlgorithmTypes
   runType: RunTypes
-  name: string
-  estimatedExecutionTime: number
   blockedProcessCounter: number
-  processStatus: ProcessStatusTypes
+  isPaginated: boolean
+  pageAlgorithm: PageAlgorithmTypes
+  marcos: number
 }
 
 interface RegularAdvanceContext extends MyMachineContext{
@@ -57,20 +79,15 @@ interface MyMachineStateSchema {
 }
 
 interface MyMachineBaseEvent {
-  process: Process
-  status: ProcessStatusTypes
-  estimatedExecutionTime: number
-  name: string
   algorithm: AlgorithmTypes
   quantum: number
   quantumSize: number
   quantumActive: boolean
 }
 
-interface NewProcessEvent extends MyMachineBaseEvent {
-  type: 'NEW_PROCESS'
-  process: Process
-  status: ProcessStatusTypes
+interface NewProcessListEvent extends MyMachineBaseEvent {
+  type: 'NEW_PROCESS_LIST'
+  processList: Process[]
 }
 
 interface AdvanceEvent extends MyMachineBaseEvent {
@@ -93,11 +110,6 @@ interface TickEvent extends MyMachineBaseEvent {
   type: 'TICK'
 }
 
-interface ChangeNameEvent extends MyMachineBaseEvent {
-  type: 'CHANGE_NAME'
-  name: string
-}
-
 interface ChangeAlgorithmEvent extends MyMachineBaseEvent {
   type: 'CHANGE_ALGORITHM'
   algorithm: AlgorithmTypes
@@ -113,38 +125,51 @@ interface ChangeQuantumActiveEvent extends MyMachineBaseEvent {
   quantumActive: boolean
 }
 
-
-interface ChangeEstimatedExecutionTimeEvent extends MyMachineBaseEvent {
-  type: 'CHANGE_EST_TIME'
-  estimatedExecutionTime: number
+interface UpdateCurrentTimeEvent extends MyMachineBaseEvent {
+  type: 'UPDATE_CURRENT_TIME'
+  currentTime: number
 }
 
-interface ChangeProcessStatusEvent extends MyMachineBaseEvent {
-  type: 'CHANGE_PROCESS_STATUS'
-  status: ProcessStatusTypes
+interface TogglePaginationEvent extends MyMachineBaseEvent {
+  type: 'TOGGLE_PAGINATION'
+}
+
+interface ChangePageAlgorithmEvent extends MyMachineBaseEvent {
+  type: 'CHANGE_PAGE_ALGORITHM'
+  pageAlgorithm: PageAlgorithmTypes
+}
+
+interface UpdateMarcosEvent extends MyMachineBaseEvent {
+  type: 'UPDATE_MARCOS'
+  marcos: number
+}
+
+interface ResetNURBitsEvent extends MyMachineBaseEvent {
+  type: 'RESET_NUR_BITS'
 }
 
 type MyMachineEvent =
-  | NewProcessEvent
+  | NewProcessListEvent
+  | UpdateCurrentTimeEvent
+  | UpdateMarcosEvent
+  | ResetNURBitsEvent
+  | ChangePageAlgorithmEvent
+  | TogglePaginationEvent
   | AdvanceEvent
   | BackEvent
   | RealTimeEvent
   | StopEvent
-  | ChangeNameEvent
-  | ChangeEstimatedExecutionTimeEvent
-  | ChangeProcessStatusEvent
   | ChangeAlgorithmEvent
   | ChangeQuantumSizeEvent
   | ChangeQuantumActiveEvent
   | TickEvent
 
 export type { 
-  Process,
   Stack,
   MyMachineEvent,
   MyMachineContext,
   MyMachineStateSchema,
-  NewProcessEvent,
+  NewProcessListEvent,
   ProcessStatusTypes,
   RegularAdvanceContext,
   AlgorithmTypes

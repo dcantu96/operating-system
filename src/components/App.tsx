@@ -1,46 +1,57 @@
 import React, { Fragment } from 'react';
-import { TopActions, Process, Cpu } from '.'
+import { TopActions, Process, Cpu, Pagination } from '.'
 import { useMyMachine } from './MyMachine.machine'
 
 function App() {
   const [myMachine, send] = useMyMachine()
-
-
   return (
     <Fragment>
       <main className="min-w-screen min-h-screen p-2">
         <section className='container mx-auto space-y-4'>
-          <header>
-            <p>My Little SSO developed and designed by David Cantú</p>
-            <p>Stack: React, xState, tailwindcss, typescript</p>
+          <header className='flex justify-between px-4'>
+            <div>
+              <p>My Little SSO developed and designed by David Cantú</p>
+              <p>Stack: React, xState, tailwindcss, typescript</p>
+            </div>
+            <div className='text-right'>
+              <div className='mb-3'>
+                <label className='font-bold'>Current Time</label>
+                <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.currentTime}</span>
+              </div>
+              <div className='mb-3'>
+                <label className='font-bold'>Procesing Type</label>
+                <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.isPaginated ? 'Paginated' : 'Normal'}</span>
+              </div>
+              { myMachine.context.isPaginated &&
+                <div>
+                  <label className='font-bold'>Marcos</label>
+                  <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.marcos}</span>
+                </div>
+              }
+            </div>
           </header>
           <TopActions
+            send={send}
             context={myMachine.context}
             state={myMachine.value}
             realTime={() => send('REAL_TIME')}
             stop={() => send('STOP')}
             advance={() => send('ADVANCE')} />
-          <Process 
-            context={myMachine.context}
-            handleName={(e) => { send('CHANGE_NAME', { name: e.target.value }) }}
-            handleEstimatedExecutionTime={(e) => { send('CHANGE_EST_TIME', { estimatedExecutionTime: parseInt(e.target.value) || 0 }) }}
-            handleProcessStatus={(e) => { send('CHANGE_PROCESS_STATUS', { status: e.target.value }) }}
-            newProcess={(e) => { e.preventDefault(); send('NEW_PROCESS', { 
-              status: myMachine.context.processStatus,
-              process: {
-                name: myMachine.context.name,
-                estimatedExecutionTime: myMachine.context.estimatedExecutionTime,
-                arrivalTime: myMachine.context.currentTime,
-                assignedCpuTime: 0,
-              }  
-            })}}
-            />
+          <Process context={myMachine.context} send={send} />
           <Cpu 
             context={myMachine.context}
             handleAlgorithm={(e) => { send('CHANGE_ALGORITHM', { algorithm: e.target.value }) }} 
             handleQuantum={(e) => { send('CHANGE_QUANTUM_SIZE', { quantumSize: parseInt(e.target.value) || 0 }) }} 
             handleQuantumActive={(e) => { send('CHANGE_QUANTUM_ACTIVE', { quantumActive: e.target.checked }) }} 
             />
+            {
+              myMachine.context.isPaginated && 
+                <Pagination
+                  context={myMachine.context}
+                  handlePageAlgo={(e) => { send('CHANGE_PAGE_ALGORITHM', { pageAlgorithm: e.target.value }) }} 
+                  handleResetNURBits={() => { send('RESET_NUR_BITS') }} 
+                  />
+            }
         </section>
       </main>
     </Fragment>
