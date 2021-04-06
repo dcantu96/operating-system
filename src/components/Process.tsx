@@ -95,8 +95,8 @@ export const Process = ({ context, send }: ProcessProps) => {
           <div className='text-center pt-2 px-2 pb-1 bg-gray-700 text-white uppercase border-b border-black mb-4'>
             Ready
           </div>
-          {context?.readyStack?.map((process, index) => (
-            <ProcessCard key={index} process={process} status='READY' />
+          {context?.readyStack?.map((process, key) => (
+            <ProcessCard key={key} process={process} status='READY' />
           ))}
         </div>
         <div className='shadow bg-white rounded border border-black'>
@@ -111,16 +111,16 @@ export const Process = ({ context, send }: ProcessProps) => {
           <div className='text-center pt-2 px-2 pb-1 bg-gray-700 text-white uppercase border-b border-black mb-4'>
             Blocked
           </div>
-          {context?.blockedStack?.map((process, index) => (
-            <ProcessCard key={index} process={process} status='BLOCKED' />
+          {context?.blockedStack?.map((process, key) => (
+            <ProcessCard key={key} process={process} status='BLOCKED' />
           ))}
         </div>
         <div className='shadow bg-white rounded border border-black'>
           <div className='text-center pt-2 px-2 pb-1 bg-gray-700 text-white uppercase border-b border-black mb-4'>
             Finished
           </div>
-          {context?.finishedStack?.map((process, index) => (
-            <ProcessCard key={index} process={process} status='FINISHED' />
+          {context?.finishedStack?.map((process, key) => (
+            <ProcessCard key={key} process={process} status='FINISHED' />
           ))}
         </div>
       </div>
