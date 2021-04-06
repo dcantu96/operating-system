@@ -31,7 +31,7 @@ export const EditPagesList = ({ newProcess, newProcessList, setNewProcessList, c
 		))
 	}
 
-	function handleNestedCheckboxValues(page: Page, key: 'nur', nestedKey: 'residence' | 'modification') {
+	function handleNestedCheckboxValues(page: Page, key: 'nur', nestedKey: 'read' | 'write') {
 		setNewProcessList(
 			newProcessList.map(item => item === newProcess ? 
 				{
@@ -84,10 +84,10 @@ export const EditPagesList = ({ newProcess, newProcessList, setNewProcessList, c
 					<div className='flex flex-col'>
 						<div className='grid grid-cols-2'>
 							<label className='text-xl select-none'>R
-								<input type="checkbox" id={`res-${key}`} className='rounded ml-2 h-5 w-5 mb-1' checked={page.nur.residence} onChange={() => handleNestedCheckboxValues(page, 'nur', 'residence')}  />
+								<input type="checkbox" id={`res-${key}`} className='rounded ml-2 h-5 w-5 mb-1' checked={page.nur.read} onChange={() => handleNestedCheckboxValues(page, 'nur', 'read')}  />
 							</label>
 							<label className='text-xl select-none'>M
-								<input type="checkbox" id={`mod-${key}`} className='rounded ml-2 h-5 w-5 mb-1' checked={page.nur.modification} onChange={() => handleNestedCheckboxValues(page, 'nur', 'modification')}  />
+								<input type="checkbox" id={`mod-${key}`} className='rounded ml-2 h-5 w-5 mb-1' checked={page.nur.write} onChange={() => handleNestedCheckboxValues(page, 'nur', 'write')}  />
 							</label>
 						</div>
 					</div>

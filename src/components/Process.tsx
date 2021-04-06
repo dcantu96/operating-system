@@ -17,17 +17,19 @@ export const Process = ({ context, send }: ProcessProps) => {
 		lastAccessTime: 0,
 		residence: false,
 		nur: {
-			residence: false,
-			modification: false
+			read: false,
+			write: false,
+			readCounts: 0
 		}
 	}
   const defaultNewProcess: IProcess = {
     name: '',
     status: 'READY',
-    assignedCpuTime: 1,
-    estimatedExecutionTime: 1,
+    assignedCpuTime: 0,
+    estimatedExecutionTime: 0,
     pages: [defaultNewPage],
-    arrivalTime: context.currentTime
+    arrivalTime: context.currentTime,
+    blockedTime: 5
   }
   const [newProcess, setNewProcess] = useState<IProcess>(defaultNewProcess)
   const [multiForm, toggleMultiForm] = useState(false)
@@ -42,7 +44,7 @@ export const Process = ({ context, send }: ProcessProps) => {
             <button className='bg-white text-black shadow rounded px-3 py-1 ml-4' onClick={() => toggleMultiForm(!multiForm)}>Multi</button>
           </div>
           {multiForm && <ProcessMultiForm context={context} send={send} handleClose={() => toggleMultiForm(!multiForm)} />}
-          {editPages && <EditPages newProcess={newProcess} setNewProcess={setNewProcess} handleClose={() => toggleEditPages(!editPages)} />}
+          {editPages && <EditPages marcos={context.marcos} newProcess={newProcess} setNewProcess={setNewProcess} handleClose={() => toggleEditPages(!editPages)} />}
           <form onSubmit={(e) => { e.preventDefault(); send('NEW_PROCESS_LIST', {
             processList: [{...newProcess, arrivalTime: context.currentTime}]
           })}}>
@@ -50,20 +52,30 @@ export const Process = ({ context, send }: ProcessProps) => {
               <label className='font-bold'>Nombre</label>
               <input type="text" required className='rounded w-20 py-1' value={newProcess.name} onChange={e => setNewProcess({...newProcess, name: e.currentTarget.value})} />
             </div>
-            <div className='flex items-center px-2 py-1 justify-between'>
-              <label className='font-bold'>Tiempo Est. Ejecución</label>
-              <input type="number" required className='rounded w-20 py-1' value={newProcess.estimatedExecutionTime} onChange={e => setNewProcess({...newProcess, estimatedExecutionTime: e.currentTarget.valueAsNumber})}  />
-            </div>
-            { context.isPaginated && 
-              <div className='flex items-center px-2 py-1 justify-between'>
-                <label className='font-bold'>Cant. de Paginas</label>
-                <div className='flex items-center'>
-                  <button className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2 disabled:opacity-50' disabled={newProcess.pages.length <= 1} onClick={() => setNewProcess({...newProcess, pages: newProcess.pages.slice(0, -1)})}>-</button>
-                  <span>{newProcess.pages.length}</span>
-                  <button className='bg-indigo-900 text-white shadow rounded px-3 py-1 ml-2' onClick={() => setNewProcess({...newProcess, pages: [...newProcess.pages, {...defaultNewPage, number: newProcess.pages.length}]})}>+</button>
-                  <button className='bg-yellow-600 text-white shadow rounded px-3 py-1 ml-2' onClick={() => toggleEditPages(!editPages)}>ED</button>
+            { context.isPaginated ?
+              <>
+                
+                <div className='flex items-center px-2 py-1 justify-between'>
+                  <label className='font-bold'>Cant. de Paginas</label>
+                  <div className='flex items-center'>
+                    <button type="button" className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2 disabled:opacity-50' disabled={newProcess.pages.length <= 1} onClick={() => setNewProcess({...newProcess, pages: newProcess.pages.slice(0, -1)})}>-</button>
+                    <span>{newProcess.pages.length}</span>
+                    <button type="button" className='bg-indigo-900 text-white shadow rounded px-3 py-1 ml-2' onClick={() => setNewProcess({...newProcess, pages: [...newProcess.pages, {...defaultNewPage, number: newProcess.pages.length}]})}>+</button>
+                    <button type="button" className='bg-yellow-600 text-white shadow rounded px-3 py-1 ml-2' onClick={() => toggleEditPages(!editPages)}>ED</button>
+                  </div>
                 </div>
-              </div>
+                <div className='flex items-center px-2 py-1 justify-between'>
+                  <label className='font-bold'>Ejecución total</label>
+                  <input type="number" required className='rounded w-20 py-1' value={newProcess.estimatedExecutionTime} onChange={e => setNewProcess({...newProcess, estimatedExecutionTime: e.currentTarget.valueAsNumber})}  />
+                </div>
+              </>
+              :
+              <>
+                <div className='flex items-center px-2 py-1 justify-between'>
+                  <label className='font-bold'>Tiempo Est. Ejecución</label>
+                  <input type="number" required className='rounded w-20 py-1' value={newProcess.estimatedExecutionTime} onChange={e => setNewProcess({...newProcess, estimatedExecutionTime: e.currentTarget.valueAsNumber})}  />
+                </div>
+              </>
             }
             <div className='flex items-center px-2 py-1 justify-between'>
               <label className='font-bold'>Estado de Proceso</label>

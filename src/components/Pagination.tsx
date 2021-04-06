@@ -1,13 +1,13 @@
 import React from 'react'
+import { send } from 'xstate/lib/actionTypes'
 import { MyMachineContext } from './index.types'
 
 interface PaginationProps {
   context: MyMachineContext
-  handlePageAlgo: React.ChangeEventHandler<HTMLSelectElement>
-  handleResetNURBits: React.MouseEventHandler<HTMLButtonElement>
+  send: (event: any, payload?: any) => any
 }
 
-export const Pagination = ({ context, handlePageAlgo, handleResetNURBits }: PaginationProps) => {
+export const Pagination = ({ context, send }: PaginationProps) => {
   return (
     <div className='grid grid-cols-6 py-4 px-6 bg-green-400 shadow rounded'>
       <div className='font-bold uppercase'>Memory</div>
@@ -23,12 +23,20 @@ export const Pagination = ({ context, handlePageAlgo, handleResetNURBits }: Pagi
           </div>
           { context.runningProcess?.pages.map(page => (
             <div className='grid grid-cols-6 text-center px-2 py-2 border-b border-black'>
-              <div>{page.number}</div>
+              <div>
+                <button 
+                  className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2'
+                  onClick={() => send('RUN_PAGE', { number: page.number })}
+                  >
+                  RUN
+                </button>
+                <b>{page.number}</b>
+              </div>
               <div>{page.residence ? '1' : '0'}</div>
               <div>{page.arrivalTime}</div>
               <div>{page.lastAccessTime}</div>
               <div>{page.accessAmount}</div>
-              <div>{page.nur.residence ? '1' : '0'} {page.nur.modification ? '1' : '0'}</div>
+              <div>{page.nur.read ? '1' : '0'} {page.nur.write ? '1' : '0'}</div>
             </div>
           )) }
         </div>
@@ -37,13 +45,13 @@ export const Pagination = ({ context, handlePageAlgo, handleResetNURBits }: Pagi
             Memory
           </div>
           <div className='p-2'>
-            <select className='py-1 px-3 rounded shadow w-full mb-4' value={context.pageAlgorithm} onChange={handlePageAlgo}>
+            <select className='py-1 px-3 rounded shadow w-full mb-4' value={context.pageAlgorithm} onChange={(e) => { send('CHANGE_PAGE_ALGORITHM', { pageAlgorithm: e.target.value }) }}>
               <option value="FIFO">FIFO</option>
               <option value="LRU">LRU</option>
               <option value="LFU">LFU</option>
               <option value="NUR">NUR</option>
             </select>
-            {context.pageAlgorithm === 'NUR' && <button onClick={handleResetNURBits}>Reset NUR Bits</button>}
+            {context.pageAlgorithm === 'NUR' && <button className='bg-indigo-900 text-white shadow rounded px-3 py-1' onClick={() => { send('RESET_NUR_BITS') }}>Reset NUR Bits</button>}
           </div>
         </div>
       </div>

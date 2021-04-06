@@ -1,6 +1,7 @@
 interface NUR {
-  residence: boolean
-  modification: boolean
+  readCounts: number
+  read: boolean
+  write: boolean
 }
 
 export interface Page {
@@ -19,10 +20,11 @@ export interface Process {
   assignedCpuTime: number
   status: ProcessStatusTypes
   pages: Page[]
+  blockedTime: number
 }
 
-type Stack =
-  Process[]
+
+type Stack = Process[]
 
 type ProcessStatusTypes =
   | 'BLOCKED'
@@ -49,7 +51,8 @@ type RunTypes =
   | 'step'
 
 interface MyMachineContext {
-  newProcessList: Process[]
+  isPaginated: boolean
+  newProcessList: Stack
   quantumSize: number
   quantumActive: boolean
   runningProcess: Process | undefined
@@ -61,20 +64,40 @@ interface MyMachineContext {
   algorithm: AlgorithmTypes
   runType: RunTypes
   blockedProcessCounter: number
-  isPaginated: boolean
   pageAlgorithm: PageAlgorithmTypes
   marcos: number
+  pageNumberToRun?: number
 }
 
-interface RegularAdvanceContext extends MyMachineContext{
+interface RegularAdvanceContext extends MyMachineContext {
   runningProcess: Process
   readyStack: Stack
 }
 
 interface MyMachineStateSchema {
   states: {
+    pagination: {
+      states: {
+        idle: {}
+        paginationAdvance: {} // is page loaded? -> load data also increment assigned cpu time & tick quantum WHEN NECESARRY // page NOT loaded... set running process to blocked
+      }
+    }
     step: {}
     realTime: {}
+    advance: {
+      states: {
+        advanceTime: {}
+        tickQuantum: {}
+        tickBlockedStack: {}
+        updateRunningProcessStatus: {} // if quantum -> validate also with quantum, else just validate with time remaining for process. Guard clause: CHECK IF PROCESS NOT BLOCKED
+        updateReadyStackStatus: {} // set first item of array to running only when runnning process is NOT RUNNING
+        updateBlockedStackStatus: {} // set items to ready only if quantumCounter  == 0
+        transitRunningProcess: {} // only move if status != running
+        transitReadyStack: {} // only move if first item == running && filter
+        transitBlockedStack: {} // only move items with 'ready' to ready && filter
+        orderReadyStackByAlgo: {}
+      }
+    }
   }
 }
 
@@ -148,10 +171,16 @@ interface ResetNURBitsEvent extends MyMachineBaseEvent {
   type: 'RESET_NUR_BITS'
 }
 
+interface RunPageEvent extends MyMachineBaseEvent {
+  type: 'RUN_PAGE'
+  number: number
+}
+
 type MyMachineEvent =
   | NewProcessListEvent
   | UpdateCurrentTimeEvent
   | UpdateMarcosEvent
+  | RunPageEvent
   | ResetNURBitsEvent
   | ChangePageAlgorithmEvent
   | TogglePaginationEvent

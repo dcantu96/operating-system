@@ -46,10 +46,17 @@ export const ProcessCard = ({ process, status }: ProcessCardProps) => {
   return (
     <div className={`${cardClasses()} m-2 pb-2 rounded shadow overflow-hidden`}>
       <h3 className={`${headerClasses()} text-white px-2 py-1 mb-2`}>{process.name}</h3>
-      <p className='text-white px-2'>Arrival Time <b>{process.arrivalTime}</b></p>
+      {
+        process.status === 'BLOCKED' ? 
+          <p className='text-white px-2'>Blocked Time Rem <b>{process.blockedTime}</b></p>
+        :
+        <>
+          <p className='text-white px-2'>Arrival Time <b>{process.arrivalTime}</b></p>
+          <p className='text-white px-2'>Est Excecution Time <b>{process.estimatedExecutionTime}</b></p>
+          <p className='text-white px-2'>Assigned CPU <b>{process.assignedCpuTime}</b></p>
+        </>
+      }
       <p className='text-white px-2'>Time Remaining <b>{process.estimatedExecutionTime - process.assignedCpuTime}</b></p>
-      <p className='text-white px-2'>Est Excecution Time <b>{process.estimatedExecutionTime}</b></p>
-      <p className='text-white px-2'>Assigned CPU <b>{process.assignedCpuTime}</b></p>
     </div>
   )
 }

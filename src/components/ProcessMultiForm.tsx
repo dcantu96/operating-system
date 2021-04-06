@@ -17,17 +17,19 @@ export const ProcessMultiForm = ({ context, send, handleClose }: ProcessProps) =
 		lastAccessTime: 0,
 		residence: false,
 		nur: {
-			residence: false,
-			modification: false
+			read: false,
+			write: false,
+			readCounts: 0
 		}
 	}
 	const defaultNewProcess: IProcess = {
     name: '',
     status: 'READY',
-    assignedCpuTime: 1,
-    estimatedExecutionTime: 1,
+    assignedCpuTime: 0,
+    estimatedExecutionTime: 0,
     pages: [defaultNewPage],
-    arrivalTime: context.currentTime
+    arrivalTime: context.currentTime,
+		blockedTime: 5
   }
   const [newProcessList, setNewProcessList] = useState<IProcess[]>([defaultNewProcess])
 	
@@ -57,19 +59,19 @@ export const ProcessMultiForm = ({ context, send, handleClose }: ProcessProps) =
 				<div className='text-center py-3 px-4 bg-gray-300 text-black mb-4 flex justify-between items-center'>
 					<h1 className='text-xl'>Procesos</h1>
 					<div>
-						<button className='bg-green-600 text-white shadow rounded px-3 py-1 ml-4' onClick={() => setNewProcessList([...newProcessList, defaultNewProcess])}>Agregar +</button>
-						<button className='bg-white text-black shadow rounded px-3 py-1 ml-4' onClick={handleClose}>Cerrar</button>
+						<button type='button' className='bg-green-600 text-white shadow rounded px-3 py-1 ml-4' onClick={() => setNewProcessList([...newProcessList, defaultNewProcess])}>Agregar +</button>
+						<button type='button' className='bg-white text-black shadow rounded px-3 py-1 ml-4' onClick={handleClose}>Cerrar</button>
 					</div>
 				</div>
 				<div className='flex px-4 items-center'>
 					<h1 className='text-xl'>Marcos de Página <b>{context.marcos}</b></h1>
-					<button className='bg-green-600 text-white shadow rounded px-3 py-1 ml-4' onClick={() => setNewProcessList([...newProcessList, defaultNewProcess])}>Change Marcos</button>
+					<button type='button' className='bg-green-600 text-white shadow rounded px-3 py-1 ml-4' onClick={() => setNewProcessList([...newProcessList, defaultNewProcess])}>Change Marcos</button>
 				</div>
 				<div>
 					<form onSubmit={e => handleSubmit(e)} className='divide-y-4 divide-gray-400 divide-solid'>
 						{newProcessList.map((newProcess, key) => (
-							<>
-								<div className='grid grid-cols-4 md:grid-cols-10 gap-4 px-4 py-2' key={key}>
+							<React.Fragment key={key}>
+								<div className='grid grid-cols-4 md:grid-cols-10 gap-4 px-4 py-2'>
 									<div className='flex flex-col py-1 col-span-4 md:col-span-3'>
 										<label className='font-bold'>Nombre</label>
 										<input type="text" required className='rounded py-1' value={newProcess.name} onChange={e => setNewProcessList(newProcessList.map(item => item === newProcess ? {...item, name: e.currentTarget.value} : item)) } />
@@ -93,19 +95,23 @@ export const ProcessMultiForm = ({ context, send, handleClose }: ProcessProps) =
 									</div>
 									<div className='flex flex-col py-1'>
 										<label className='font-bold'>Acciones</label>
-										<button className='bg-red-600 text-white shadow rounded px-3 py-1 disabled:opacity-50' disabled={newProcessList.length === 1} onClick={() => setNewProcessList(newProcessList.filter((_, index) => newProcessList[index] !== newProcess))}>Eliminar</button>
+										<button type='button' className='bg-red-600 text-white shadow rounded px-3 py-1 disabled:opacity-50' disabled={newProcessList.length === 1} onClick={() => setNewProcessList(newProcessList.filter((_, index) => newProcessList[index] !== newProcess))}>Eliminar</button>
 									</div>
 								</div>
-								<div className='flex items-center py-3 pl-16'>
-									<h4 className='text-lg'>Editar Paginas:</h4>
-									<button className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2 disabled:opacity-50' disabled={newProcess.pages.length <= 1} onClick={() => removeLastPage(newProcess)}>-</button>
-									<h4 className='text-lg'>{newProcess.pages.length}</h4>
-									<button className='bg-indigo-900 text-white shadow rounded px-3 py-1 ml-2' onClick={() => appendPage(newProcess)}>+</button>
-								</div>
-								<div className='pl-16'>
-									{context.isPaginated && <EditPagesList context={context} newProcess={newProcess} newProcessList={newProcessList} setNewProcessList={setNewProcessList} key={key} />}
-								</div>
-							</>
+								{context.isPaginated &&
+									<>
+										<div className='flex items-center py-3 pl-16'>
+											<h4 className='text-lg'>Editar Paginas:</h4>
+											<button type='button' className='bg-indigo-900 text-white shadow rounded px-3 py-1 mr-2 disabled:opacity-50' disabled={newProcess.pages.length <= 1} onClick={() => removeLastPage(newProcess)}>-</button>
+											<h4 className='text-lg'>{newProcess.pages.length}</h4>
+											<button type='button' className='bg-indigo-900 text-white shadow rounded px-3 py-1 ml-2' onClick={() => appendPage(newProcess)}>+</button>
+										</div>
+										<div className='pl-16'>
+											<EditPagesList context={context} newProcess={newProcess} newProcessList={newProcessList} setNewProcessList={setNewProcessList} />
+										</div>
+									</>
+								}
+							</React.Fragment>
 						))}
 						<div className='block pt-2'>
 							<input type="submit" value="Crear" className='bg-indigo-900 cursor-pointer text-white shadow px-3 py-4 rounded-b w-full uppercase text-xl' />

@@ -18,19 +18,22 @@ function App() {
                 <label className='font-bold'>Current Time</label>
                 <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.currentTime}</span>
               </div>
-              <div className='mb-3'>
-                <label className='font-bold'>Procesing Type</label>
-                <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.isPaginated ? 'Paginated' : 'Normal'}</span>
-              </div>
-              { myMachine.context.isPaginated &&
+              <div className='flex mb-3'>
                 <div>
-                  <label className='font-bold'>Marcos</label>
-                  <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.marcos}</span>
+                  <label className='font-bold'>Procesing Type</label>
+                  <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.isPaginated ? 'Paginated' : 'Normal'}</span>
                 </div>
-              }
+                { myMachine.context.isPaginated &&
+                  <div className='ml-4'>
+                    <label className='font-bold'>Marcos</label>
+                    <span className='ml-2 px-2 py-1 border border-black rounded shadow'>{myMachine.context.marcos}</span>
+                  </div>
+                }
+              </div>
             </div>
           </header>
           <TopActions
+            executePage={() => send('ADVANCE')}
             send={send}
             context={myMachine.context}
             state={myMachine.value}
@@ -44,14 +47,7 @@ function App() {
             handleQuantum={(e) => { send('CHANGE_QUANTUM_SIZE', { quantumSize: parseInt(e.target.value) || 0 }) }} 
             handleQuantumActive={(e) => { send('CHANGE_QUANTUM_ACTIVE', { quantumActive: e.target.checked }) }} 
             />
-            {
-              myMachine.context.isPaginated && 
-                <Pagination
-                  context={myMachine.context}
-                  handlePageAlgo={(e) => { send('CHANGE_PAGE_ALGORITHM', { pageAlgorithm: e.target.value }) }} 
-                  handleResetNURBits={() => { send('RESET_NUR_BITS') }} 
-                  />
-            }
+          {myMachine.context.isPaginated && <Pagination send={send} context={myMachine.context} />}
         </section>
       </main>
     </Fragment>
